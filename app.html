@@ -2300,7 +2300,7 @@
   </div>
 
   <script>
-    const APP_VERSION = '1.1.0';
+    const APP_VERSION = '1.1.1';
     const STORAGE_KEY = 'ra_planner_v1';
     const VIEW_STORAGE_KEY = 'ra_planner_last_view';
     var _locPage = 1;
@@ -5387,12 +5387,33 @@
       return L.divIcon({ html: html, className: '', iconSize: [0, 0], iconAnchor: [0, 0], popupAnchor: [0, -52] });
     }
 
+    var _DUBLIN_DISTRICTS = {
+      'dublin 1':  { lat:53.3498, lng:-6.2603 }, 'dublin 2':  { lat:53.3382, lng:-6.2591 },
+      'dublin 3':  { lat:53.3667, lng:-6.2333 }, 'dublin 4':  { lat:53.3279, lng:-6.2260 },
+      'dublin 5':  { lat:53.3876, lng:-6.2042 }, 'dublin 6':  { lat:53.3140, lng:-6.2683 },
+      'dublin 6w': { lat:53.3100, lng:-6.2900 }, 'dublin 7':  { lat:53.3603, lng:-6.2839 },
+      'dublin 8':  { lat:53.3288, lng:-6.2896 }, 'dublin 9':  { lat:53.3787, lng:-6.2528 },
+      'dublin 10': { lat:53.3397, lng:-6.3481 }, 'dublin 11': { lat:53.3837, lng:-6.3049 },
+      'dublin 12': { lat:53.3155, lng:-6.3302 }, 'dublin 13': { lat:53.3990, lng:-6.1940 },
+      'dublin 14': { lat:53.2937, lng:-6.2536 }, 'dublin 15': { lat:53.3958, lng:-6.3726 },
+      'dublin 16': { lat:53.2657, lng:-6.2447 }, 'dublin 17': { lat:53.3906, lng:-6.2236 },
+      'dublin 18': { lat:53.2530, lng:-6.1897 }, 'dublin 20': { lat:53.3355, lng:-6.3866 },
+      'dublin 22': { lat:53.3291, lng:-6.4035 }, 'dublin 24': { lat:53.2886, lng:-6.3878 },
+      'd1':{ lat:53.3498, lng:-6.2603 }, 'd2':{ lat:53.3382, lng:-6.2591 },
+      'd4':{ lat:53.3279, lng:-6.2260 }, 'd6':{ lat:53.3140, lng:-6.2683 },
+      'd7':{ lat:53.3603, lng:-6.2839 }, 'd8':{ lat:53.3288, lng:-6.2896 },
+      'd9':{ lat:53.3787, lng:-6.2528 }, 'd12':{ lat:53.3155, lng:-6.3302 },
+      'd15':{ lat:53.3958, lng:-6.3726 }, 'd24':{ lat:53.2886, lng:-6.3878 }
+    };
+
     function resolveTownCoords(locationStr) {
       if (!locationStr) return null;
       // Try each comma-separated part (e.g. "Kill, Kildare" → try "Kill" then "Kildare")
       var parts = locationStr.split(',').map(function (p) { return p.trim(); });
       for (var i = 0; i < parts.length; i++) {
         var key = parts[i].toLowerCase();
+        // 0. Dublin district lookup (e.g. "Dublin 4", "D4")
+        if (_DUBLIN_DISTRICTS[key]) return _DUBLIN_DISTRICTS[key];
         // 1. Exact match in towns database
         if (_ieTowns[key]) return _ieTowns[key];
         // 2. StartsWith match in towns database
