@@ -1631,6 +1631,24 @@
       background: var(--bg-card); border-right: 1px solid var(--border);
       height: 100%; min-height: 0; overflow: hidden;
     }
+    .msb-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .msb-tab-btn { flex: 1; border: none; background: none; font-family: inherit; font-size: 11px; font-weight: 700; padding: 9px 4px; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .12s; }
+    .msb-tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .msb-tab-panel { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+    .msb-tab-panel.active { display: flex; }
+    /* Tech search */
+    .msb-tech-search { padding: 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    #msb-tech-results { flex: 1; overflow-y: auto; padding: 8px; }
+    #msb-tech-results::-webkit-scrollbar { width: 4px; }
+    #msb-tech-results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .msb-tech-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 6px; cursor: pointer; transition: border-color .12s; }
+    .msb-tech-row:hover { border-color: var(--accent); background: var(--bg-soft); }
+    .msb-tech-row.active { border-color: var(--accent); background: #eff6ff; }
+    .msb-tech-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .msb-tech-info { flex: 1; min-width: 0; }
+    .msb-tech-name { font-size: 12px; font-weight: 800; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msb-tech-meta { font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msb-tech-loc-pill { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: var(--bg-soft); border: 1px solid var(--border); color: var(--text-secondary); flex-shrink: 0; }
     .msb-search {
       padding: 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; position: relative;
     }
@@ -2241,30 +2259,50 @@
         <div id="view-map-inner">
           <!-- LEFT SIDEBAR -->
           <div id="map-sidebar">
-            <div class="msb-search">
-              <div class="msb-search-row">
+            <div class="msb-tabs">
+              <button class="msb-tab-btn active" id="msb-tab-fault" onclick="msbSetTab('fault')">Fault Search</button>
+              <button class="msb-tab-btn" id="msb-tab-tech" onclick="msbSetTab('tech')">Technicians</button>
+            </div>
+            <!-- Fault Search panel -->
+            <div class="msb-tab-panel active" id="msb-panel-fault">
+              <div class="msb-search">
+                <div class="msb-search-row">
+                  <div class="msb-input-wrap">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" class="msb-input" id="msb-search-input" placeholder="Search exchange or cabinet…" autocomplete="off"
+                      oninput="msbSearch(this.value)"
+                      onfocus="msbSearch(this.value)"
+                      onblur="setTimeout(function(){var r=document.getElementById('msb-results');if(r)r.innerHTML=''},200)">
+                  </div>
+                </div>
+                <input type="date" class="msb-date" id="msb-date" onchange="msbRenderCandidates()">
+                <div class="msb-time-toggle">
+                  <button class="msb-time-btn active" id="msb-btn-day" onclick="msbSetTimeMode('day')">☀ Business hours</button>
+                  <button class="msb-time-btn" id="msb-btn-after" onclick="msbSetTimeMode('after')">🌙 After hours</button>
+                </div>
+                <div id="msb-results"></div>
+              </div>
+              <div id="msb-sel-bar" class="msb-sel-bar" style="display:none">
+                <span class="msb-sel-pill" id="msb-sel-pill">exchange</span>
+                <span class="msb-sel-name" id="msb-sel-name">—</span>
+                <button class="msb-sel-clear" onclick="msbClear()">×</button>
+              </div>
+              <div id="msb-candidates">
+                <div class="msb-empty">Search for an exchange or cabinet to see the closest available technicians.</div>
+              </div>
+            </div>
+            <!-- Tech Search panel -->
+            <div class="msb-tab-panel" id="msb-panel-tech">
+              <div class="msb-tech-search">
                 <div class="msb-input-wrap">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  <input type="text" class="msb-input" id="msb-search-input" placeholder="Search exchange or cabinet…" autocomplete="off"
-                    oninput="msbSearch(this.value)"
-                    onfocus="msbSearch(this.value)"
-                    onblur="setTimeout(function(){var r=document.getElementById('msb-results');if(r)r.innerHTML=''},200)">
+                  <input type="text" class="msb-input" id="msb-tech-input" placeholder="Search technician name…" autocomplete="off"
+                    oninput="msbTechSearch(this.value)">
                 </div>
               </div>
-              <input type="date" class="msb-date" id="msb-date" onchange="msbRenderCandidates()">
-              <div class="msb-time-toggle">
-                <button class="msb-time-btn active" id="msb-btn-day" onclick="msbSetTimeMode('day')">☀ Business hours</button>
-                <button class="msb-time-btn" id="msb-btn-after" onclick="msbSetTimeMode('after')">🌙 After hours</button>
+              <div id="msb-tech-results">
+                <div class="msb-empty">Type a name to find a technician on the map.</div>
               </div>
-              <div id="msb-results"></div>
-            </div>
-            <div id="msb-sel-bar" class="msb-sel-bar" style="display:none">
-              <span class="msb-sel-pill" id="msb-sel-pill">exchange</span>
-              <span class="msb-sel-name" id="msb-sel-name">—</span>
-              <button class="msb-sel-clear" onclick="msbClear()">×</button>
-            </div>
-            <div id="msb-candidates">
-              <div class="msb-empty">Search for an exchange or cabinet to see the closest available technicians.</div>
             </div>
           </div>
 
@@ -2300,7 +2338,7 @@
   </div>
 
   <script>
-    const APP_VERSION = '1.1.2';
+    const APP_VERSION = '1.1.3';
     const STORAGE_KEY = 'ra_planner_v1';
     const VIEW_STORAGE_KEY = 'ra_planner_last_view';
     var _locPage = 1;
@@ -5862,6 +5900,80 @@
     }
 
     var _RANK_COLORS = ['#22c55e','#22c55e','#84cc16','#f59e0b','#f97316','#94a3b8','#94a3b8','#94a3b8'];
+
+    var _msbActiveTab = 'fault';
+    var _msbSelectedTechName = null;
+
+    function msbSetTab(tab) {
+      _msbActiveTab = tab;
+      document.getElementById('msb-tab-fault').classList.toggle('active', tab === 'fault');
+      document.getElementById('msb-tab-tech').classList.toggle('active', tab === 'tech');
+      document.getElementById('msb-panel-fault').classList.toggle('active', tab === 'fault');
+      document.getElementById('msb-panel-tech').classList.toggle('active', tab === 'tech');
+      if (tab === 'tech') {
+        var inp = document.getElementById('msb-tech-input');
+        if (inp) { inp.focus(); msbTechSearch(inp.value); }
+      }
+    }
+
+    function msbTechSearch(q) {
+      var el = document.getElementById('msb-tech-results');
+      if (!el) return;
+      var contacts = state.contacts || [];
+      var qn = norm(q);
+      var filtered = contacts.filter(function (c) {
+        if (!qn) return true;
+        return norm(c.name).includes(qn) || norm(c.workLocations).includes(qn) || norm(c.manager).includes(qn);
+      });
+      filtered.sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+      if (!filtered.length) {
+        el.innerHTML = '<div class="msb-empty">No technicians match "' + esc(q) + '".</div>';
+        return;
+      }
+      var html = '';
+      filtered.forEach(function (c) {
+        var color = mapSomColor(c.manager || 'Unknown');
+        var workLoc = splitWorkPlaces(c.workLocations)[0] || c.homeStartLocation || '—';
+        var isActive = _msbSelectedTechName === c.name;
+        html += '<div class="msb-tech-row' + (isActive ? ' active' : '') + '" onclick="msbSelectTech(' + JSON.stringify(c.name) + ')">' +
+          '<div class="msb-tech-dot" style="background:' + esc(color) + '"></div>' +
+          '<div class="msb-tech-info">' +
+            '<div class="msb-tech-name">' + esc(c.name) + '</div>' +
+            '<div class="msb-tech-meta">' + esc(c.manager || '—') + ' · ' + esc(c.role || '') + '</div>' +
+          '</div>' +
+          '<div class="msb-tech-loc-pill">' + esc(workLoc) + '</div>' +
+        '</div>';
+      });
+      el.innerHTML = html;
+    }
+
+    function msbSelectTech(name) {
+      _msbSelectedTechName = name;
+      msbTechSearch((document.getElementById('msb-tech-input') || {}).value || '');
+      // Find marker and fly to it
+      var found = false;
+      _mapTechMarkers.forEach(function (marker) {
+        if (!marker._mapTechData) return;
+        var people = marker._mapTechData.people || [];
+        var match = people.some(function (p) { return p.name === name; });
+        if (match && !found) {
+          found = true;
+          if (_leafletMap) _leafletMap.flyTo(marker.getLatLng(), 13, { animate: true, duration: 0.8 });
+          marker.openPopup();
+        }
+      });
+      if (!found) {
+        // Tech pin may not have resolved — try geocoding their work location
+        var contact = (state.contacts || []).find(function (c) { return c.name === name; });
+        if (contact && _leafletMap) {
+          var places = splitWorkPlaces(contact.workLocations);
+          for (var i = 0; i < places.length; i++) {
+            var coords = resolveTownCoords(places[i]);
+            if (coords) { _leafletMap.flyTo([coords.lat, coords.lng], 11, { animate: true, duration: 0.8 }); break; }
+          }
+        }
+      }
+    }
 
     function renderSettings() {
       var el = document.getElementById('settings-content');
