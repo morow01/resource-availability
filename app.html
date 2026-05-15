@@ -2519,18 +2519,25 @@
       render();
     }
 
+    var _ieTowns = {};  // name.toLowerCase() → {lat, lng}
+
     async function loadLocationData() {
       const locStatus = document.getElementById('loc-status');
       if (locStatus) locStatus.value = 'Loading...';
       try {
         const responses = await Promise.all([
           fetch('exchanges.json', { cache: 'no-store' }),
-          fetch('cabinets.json', { cache: 'no-store' })
+          fetch('cabinets.json', { cache: 'no-store' }),
+          fetch('ie-towns.json', { cache: 'no-store' })
         ]);
         if (!responses[0].ok) throw new Error('Could not load exchanges.json');
         if (!responses[1].ok) throw new Error('Could not load cabinets.json');
         state.exchanges = await responses[0].json();
         state.cabinets = await responses[1].json();
+        if (responses[2].ok) {
+          var towns = await responses[2].json();
+          towns.forEach(function (t) { _ieTowns[t.n.toLowerCase()] = { lat: t.lat, lng: t.lng }; });
+        }
         state.locationsLoaded = true;
         state.locationsError = '';
       } catch (err) {
@@ -5380,6 +5387,27 @@
       return L.divIcon({ html: html, className: '', iconSize: [0, 0], iconAnchor: [0, 0], popupAnchor: [0, -52] });
     }
 
+    function resolveTownCoords(locationStr) {
+      if (!locationStr) return null;
+      // Try each comma-separated part (e.g. "Kill, Kildare" → try "Kill" then "Kildare")
+      var parts = locationStr.split(',').map(function (p) { return p.trim(); });
+      for (var i = 0; i < parts.length; i++) {
+        var key = parts[i].toLowerCase();
+        // 1. Exact match in towns database
+        if (_ieTowns[key]) return _ieTowns[key];
+        // 2. StartsWith match in towns database
+        var keys = Object.keys(_ieTowns);
+        for (var j = 0; j < keys.length; j++) {
+          if (keys[j].startsWith(key) || key.startsWith(keys[j])) return _ieTowns[keys[j]];
+        }
+        // 3. Exchange name match
+        var ex = exchangeForPlace(parts[i]);
+        if (ex) { var c = parseCoords(ex.link); if (c) return c; }
+      }
+      // 4. Nominatim cache
+      return _mapTechCache[norm(locationStr)] || null;
+    }
+
     function mapBuildTechLayer() {
       if (_mapLayers.technicians) {
         _leafletMap.removeLayer(_mapLayers.technicians);
@@ -5404,11 +5432,7 @@
 
       Object.keys(byLocation).forEach(function (loc) {
         var people = byLocation[loc];
-        // Try exchange match first
-        var ex = exchangeForPlace(loc);
-        var coords = ex ? parseCoords(ex.link) : null;
-        // Try cached Nominatim result
-        if (!coords && _mapTechCache[norm(loc)]) coords = _mapTechCache[norm(loc)];
+        var coords = resolveTownCoords(loc);
 
         if (coords) {
           var color = mapSomColor(people[0].manager || 'Unknown');
@@ -5640,8 +5664,7 @@
       if (cards[idx]) cards[idx].classList.add('msb-cand-active');
       var startLoc = cand.contact.homeStartLocation;
       if (!startLoc || !_msbSelectedFault || !_msbSelectedFault.coords) return;
-      var ex = exchangeForPlace(startLoc);
-      var startCoords = ex ? parseCoords(ex.link) : (_mapTechCache[norm(startLoc)] || null);
+      var startCoords = resolveTownCoords(startLoc);
       if (!startCoords) return;
       var fc = _msbSelectedFault.coords;
       var url = 'https://router.project-osrm.org/route/v1/driving/' +
